@@ -636,7 +636,7 @@ footer{
 .brand-tab-sub{display:block;font-size:0.55rem;letter-spacing:2px;opacity:0.6;margin-top:0.15rem;font-weight:400;font-family:'Plus Jakarta Sans',sans-serif}
 
 /* Main menu layout */
-.menu-layout{max-width:1300px;margin:0 auto;padding:3rem 2rem 0;display:grid;grid-template-columns:220px 1fr;gap:3rem;align-items:start}
+.menu-layout{max-width:1300px;margin:0 auto;padding:3rem 2rem 8rem;display:grid;grid-template-columns:220px 1fr;gap:3rem;align-items:start}
 
 /* Sidebar category nav */
 .cat-sidebar{position:sticky;top:145px}
@@ -1201,14 +1201,57 @@ window.addEventListener('popstate', handleRoute);
 
 // ── BRAND SWITCHER ──
 function switchBrand(brand) {
-  // Update tabs
   ['mc','ff','kp'].forEach(b => {
     const tab = document.getElementById('tab-' + b);
     const panel = document.getElementById('panel-' + b);
     if (tab) tab.classList.toggle('active', b === brand);
     if (panel) panel.classList.toggle('active-panel', b === brand);
   });
+  // Reset active cat to first item in this brand's nav
+  document.querySelectorAll('.cat-nav a').forEach(a => a.classList.remove('active-cat'));
+  const firstCat = document.querySelector('#catnav-' + brand + ' a');
+  if (firstCat) firstCat.classList.add('active-cat');
+  // Scroll menu content to top
+  window.scrollTo({top: 0, behavior: 'smooth'});
 }
+
+// ── CAT-NAV SMOOTH SCROLL (prevent hash router hijack) ──
+document.addEventListener('click', function(e) {
+  const link = e.target.closest('.cat-nav a');
+  if (!link) return;
+  e.preventDefault();
+  const targetId = link.getAttribute('href').replace('#','');
+  const el = document.getElementById(targetId);
+  if (el) {
+    el.scrollIntoView({behavior:'smooth', block:'start'});
+    // Update active immediately
+    const nav = link.closest('.cat-nav');
+    nav.querySelectorAll('a').forEach(a => a.classList.remove('active-cat'));
+    link.classList.add('active-cat');
+  }
+});
+
+// ── SCROLL SPY: update active cat-nav on scroll ──
+(function(){
+  const catBlocks = document.querySelectorAll('.menu-cat-block[id]');
+  const spyObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const id = entry.target.id;
+      // Find the active panel's catnav
+      const activePanel = document.querySelector('.brand-panel.active-panel');
+      if (!activePanel) return;
+      const nav = activePanel.querySelector('.cat-nav');
+      if (!nav) return;
+      nav.querySelectorAll('a').forEach(a => {
+        const isMatch = a.getAttribute('href') === '#' + id;
+        a.classList.toggle('active-cat', isMatch);
+      });
+    });
+  }, {threshold: 0.3, rootMargin: '-80px 0px -60% 0px'});
+
+  catBlocks.forEach(el => spyObserver.observe(el));
+})();
 
 // ── CART SYSTEM ──
 const cart = {}; // {id: {name, price, brand, qty}}
@@ -1539,7 +1582,7 @@ function submitForm(){
           </div>
           <div style="background:linear-gradient(135deg,rgba(232,101,10,0.12),rgba(201,148,42,0.08));border:1px solid rgba(232,101,10,0.25);border-radius:16px;padding:1.8rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem">
             <div>
-              <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:700;font-style:italic;color:var(--cream)">Upgrade Any Item</div>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:700;font-style:italic;color:var(--text)">Upgrade Any Item</div>
               <p style="font-family:'Plus Jakarta Sans',sans-serif;font-size:0.8rem;color:var(--text-muted);margin-top:0.4rem">French Fries + Mint Mojito or Soft Drink</p>
             </div>
             <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--saffron)">+ ₹49</div>
